@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    .opt-btn { transition: all 0.2s; }
+    .opt-btn:hover { transform: translateX(4px); }
+    .opt-btn.correct { background: #22c55e !important; color: white !important; border-color: #16a34a !important; }
+    .opt-btn.wrong { background: #ef4444 !important; color: white !important; border-color: #dc2626 !important; }
+    .opt-btn.reveal { border-color: #22c55e !important; background: rgba(34,197,94,0.15) !important; }
+    .fade-in { animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .phase-btn.active { background: var(--primary); color: var(--primary-foreground); }
+    .phase-btn.completed { background: #22c55e; color: white; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600; }
+  </style>
+</head>
+<body class="bg-[var(--background)] text-[var(--foreground)] antialiased p-0">
+
+<div id="app"></div>
+
+<script>
+const PHASES = [
+  { name: "Phase 1: Foundation", desc: "Core concepts & definitions across all topics" },
+  { name: "Phase 2: Deep Dive", desc: "Detailed knowledge & relationships between concepts" },
+  { name: "Phase 3: Scenarios & Math", desc: "Calculations, scenarios, and applied problem solving" },
+  { name: "Phase 4: Mastery", desc: "Advanced scenarios, edge cases, and strategic thinking" }
+];
+
+const TAGS = {
+  pm: { label: "Performance Mgmt", color: "#3b82f6" },
+  coach: { label: "Coaching", color: "#8b5cf6" },
+  rca: { label: "RCA", color: "#f59e0b" },
+  kpi: { label: "KPIs", color: "#22c55e" },
+  fin: { label: "Financial", color: "#ef4444" }
+};
+
+const ALL_QUESTIONS = [
+  // ===== PHASE 1: FOUNDATION (25) =====
+  // PM
+  { p:0, tag:"pm", q:"What are the 4 key components of Performance Management in order?", opts:["Plan, Monitor, Review, Reward","Planning, Developing & Reviewing, Monitoring, Recognition & Rewards","Hiring, Training, Coaching, Termination","Forecasting, Scheduling, Monitoring, Reporting"], ans:1, exp:"The 4 components are: (1) Performance Planning, (2) Developing & Reviewing, (3) Monitoring, (4) Recognition & Rewards." },
+  { p:0, tag:"pm", q:"In the Quartile system, what is the recommended action for Q1 (Top Performers)?", opts:["RCA and follow-up","Work closely on performance and assign a peer","Focus on DEVELOPMENT and assign support tasks","Motivate and help with minor opportunities"], ans:2, exp:"Q1 agents are your best — focus on developing them, assigning support tasks, and grooming them for leadership. Don't micromanage." },
+  { p:0, tag:"pm", q:"What is the main difference between SLA and Interval Compliance (IC)?", opts:["SLA is per agent, IC is per team","SLA measures call quality, IC measures call quantity","SLA measures % calls answered in threshold, IC measures % intervals where staffing matches forecast","SLA is daily, IC is monthly"], ans:2, exp:"SLA = % calls answered within a time threshold (e.g., 80% in 20s). IC = % of 30-min intervals where staffing aligns with the forecasted requirement." },
+  { p:0, tag:"pm", q:"What is CapLift?", opts:["A planned adjustment for sustained high demand","An emergency measure where everyone jumps in to take calls during sudden spikes","A penalty tier for production shortfalls","A billing model for overtime hours"], ans:1, exp:"CapLift is reactive and crisis-driven — everyone including support staff and leaders jumps in to handle calls during unexpected spikes (outages, promos, weather)." },
+  { p:0, tag:"pm", q:"If delivery is at 88% of total LOB, what penalty is applied?", opts:["2.5%","5.0%","7.5%","10.0%"], ans:2, exp:"85.00% – 89.99% = 7.5% penalty on production hours invoiced." },
+
+  // Coaching
+  { p:0, tag:"coach", q:"What does GROW stand for in the coaching model?", opts:["Guide, Review, Observe, Win","Goal, Reality, Options, Will","Growth, Results, Objectives, Work","Goals, Resources, Outcomes, Workflow"], ans:1, exp:"GROW = Goal (what to achieve), Reality (where are you now), Options (what could you do), Will (what WILL you commit to)." },
+  { p:0, tag:"coach", q:"What is the Endowment Effect in coaching?", opts:["Rewarding agents with bonuses for good performance","People value things they own more — creating ownership drives compliance","A penalty system for underperformers","A scheduling technique for optimal coverage"], ans:1, exp:"The Endowment Effect means people value what they 'own' more highly. In coaching, give agents a sense of ownership over action items so they feel it's THEIR decision, not an instruction." },
+  { p:0, tag:"coach", q:"What does STAR stand for?", opts:["Strategy, Timeline, Actions, Results","Situation, Task, Action, Result","Skills, Training, Assessment, Review","Standards, Targets, Alignment, Recognition"], ans:1, exp:"STAR = Situation (set the scene), Task (what needed doing), Action (what you did and why), Result (the outcome — focus on positives)." },
+  { p:0, tag:"coach", q:"How long should pre-coaching preparation take per agent?", opts:["5 minutes","10 minutes","No more than 15 minutes","30 minutes"], ans:2, exp:"Pre-plan 30 minutes before starting sessions. Preparing for EACH agent should not exceed 15 minutes." },
+  { p:0, tag:"coach", q:"What is the KEY principle during a coaching session according to the Tips & Tricks?", opts:["Always say NO clearly so the agent understands","Make the agent reach their own conclusion — never say NO directly","Give direct instructions and follow up strictly","Only discuss numbers and metrics"], ans:1, exp:"Never say NO or directly object. Instead, highlight loopholes in their argument and let them figure it out on their own. People resist admitting mistakes but will see them when guided." },
+
+  // RCA
+  { p:0, tag:"rca", q:"What is the difference between a symptom and a root cause?", opts:["Symptoms are hidden, root causes are visible","Symptoms are visible indicators; root causes are the hidden reasons behind them","They are the same thing viewed from different angles","Symptoms are long-term, root causes are short-term"], ans:1, exp:"Symptom = what you SEE (visible indicator). Root Cause = WHY it exists (hidden). Fixing symptoms = short-term relief. Fixing root causes = long-term fix." },
+  { p:0, tag:"rca", q:"The 5 Whys technique is best suited for:", opts:["Complex multi-dimensional issues across many teams","Simple or recurring issues with 1-2 major contributors","Only financial problems","Only quality-related issues"], ans:1, exp:"5 Whys is a rapid root cause tool ideal for behavioral, process, or small-scale issues. Often used at team level." },
+  { p:0, tag:"rca", q:"What are the standard categories (bones) in a Fishbone Diagram?", opts:["Cost, Revenue, KPIs, SLA, Attrition, Training","People, Process, Tools, Skill, Behaviors, Knowledge","Who, What, When, Where, Why, How","Input, Output, Feedback, Control, Resource, Constraint"], ans:1, exp:"The Fishbone branches into: People, Process, Tools, Skill, Behaviors & Knowledge." },
+  { p:0, tag:"rca", q:"Pareto Analysis is based on what principle?", opts:["50/50 — equal contribution from all causes","80/20 — 80% of effects come from 20% of causes","90/10 — 90% of problems come from 10% of agents","70/30 — 70% of revenue comes from 30% of clients"], ans:1, exp:"The Pareto Principle (80/20 rule): 80% of effects come from 20% of causes. Focus efforts on the vital few." },
+  { p:0, tag:"rca", q:"What is the correct drill-down path for a Deep Dive analysis?", opts:["DoD > WoW > MoM > Verbatim","MoM > WoW > DoD > Call Driver Breakdown > Verbatim Insights","Verbatim > Call Drivers > WoW > MoM","Agent level > Team level > Site level > Global"], ans:1, exp:"Deep Dive path: Month-over-Month → Week-over-Week → Day-over-Day → Call Driver Breakdown → Verbatim Insights." },
+
+  // KPIs
+  { p:0, tag:"kpi", q:"What is the formula for Utilization?", opts:["Productive Time ÷ Paid Hours","(Productive + Available Time) ÷ Paid Hours Onsite","Productive Time ÷ (Productive + Available)","Scheduled Hours ÷ Total Hours"], ans:1, exp:"Utilization % = (Productive Time + Available Time) ÷ Paid Hours Onsite. It measures how much of paid time is spent either working or ready to work." },
+  { p:0, tag:"kpi", q:"What is the formula for Occupancy?", opts:["(Productive + Available) ÷ Paid Hours","Productive Time ÷ (Productive + Available Time)","Missing Hours ÷ Scheduled Hours","Calls Answered ÷ Total Calls"], ans:1, exp:"Occupancy % = Productive Time ÷ (Productive + Available Time). It measures how much of ready-to-work time is spent actually working." },
+  { p:0, tag:"kpi", q:"What is the formula for AHT?", opts:["Total Calls ÷ Total Time","(Talk Time + Hold Time + ACW) ÷ Total Number of Calls","Talk Time ÷ Total Calls","(Talk Time + Hold Time) ÷ Available Time"], ans:1, exp:"AHT = (Total Talk Time + Hold Time + After Call Work) ÷ Total Number of Calls." },
+  { p:0, tag:"kpi", q:"What is the formula for NPS?", opts:["Positive Surveys ÷ Total Surveys","Negative Surveys ÷ Total Surveys","(Promoters - Detractors) ÷ Total Surveys","Promoters ÷ Detractors"], ans:2, exp:"NPS % = (Promoters − Detractors) ÷ Total Number of Surveys × 100." },
+  { p:0, tag:"kpi", q:"What is the COPC benchmark for Utilization?", opts:["80%","86%","90%","95%"], ans:1, exp:"COPC Utilization Benchmark = 86%. AUX time should not exceed 14%." },
+
+  // Financial
+  { p:0, tag:"fin", q:"What does COGS stand for and what does it include?", opts:["Cost of General Services — IT and facilities","Cost of Goods Sold — direct costs like agents, TLs, QA, trainers","Cost of Government Standards — compliance costs","Cost of Global Staffing — recruitment costs"], ans:1, exp:"COGS = Cost of Goods Sold (Direct Expense). Includes: Game Changers, TLs, OMs, SMEs, DPE, QA, Trainers — anyone directly driving revenue." },
+  { p:0, tag:"fin", q:"What is the P&L chain from Revenue to Net Earnings?", opts:["Revenue → OI → GM → NGOI → Net Earnings","Revenue → GM → OI → NGOI → Net Earnings","Revenue → NGOI → GM → OI → Net Earnings","Revenue → Net Earnings → GM → OI → NGOI"], ans:1, exp:"Revenue − Direct Costs = Gross Margin. GM − OPEX = Operating Income. OI − Amortization = NGOI. NGOI − Interest/Tax = Net Earnings." },
+  { p:0, tag:"fin", q:"What does MLOTT stand for?", opts:["Maximum Limit on Total Transactions","Money Left on the Table","Monthly Loss on Targeted Throughput","Management Level of Tolerance Threshold"], ans:1, exp:"MLOTT = Money Left on the Table — revenue you SHOULD have earned but didn't (due to absences, abandons, penalties, missed bonuses)." },
+  { p:0, tag:"fin", q:"How much does it approximately cost to replace one Game Changer?", opts:["$1,500","$2,500","$4,500","$8,000"], ans:2, exp:"The benchmark attrition replacement cost is approximately $4,500 per Game Changer. This includes recruitment, training salary, overtime coverage, and lost productivity." },
+  { p:0, tag:"fin", q:"In a Per FTE billing model, what happens to revenue when agents are absent?", opts:["Revenue drops proportionally","Revenue stays the same — it's flat billing regardless of attendance","Revenue increases due to overtime","Revenue is calculated per call"], ans:1, exp:"Per FTE/Headcount is flat billing. The same amount is billed regardless of attendance. Revenue is consistent and predictable." },
+
+  // ===== PHASE 2: DEEP DIVE (25) =====
+  // PM
+  { p:1, tag:"pm", q:"For Q3 agents (below average), what is the recommended action?", opts:["Focus on development and assign support tasks","RCA, follow up, accountability, and repeat","Work closely on performance, assign a peer, focus on RCA","Motivate and develop as a prize"], ans:2, exp:"Q3: Work closely on performance — assign a peer buddy — focus on RCA to find what's holding them back." },
+  { p:1, tag:"pm", q:"What is AHOD and how does it differ from CapLift?", opts:["AHOD is reactive; CapLift is proactive","AHOD is a planned, proactive adjustment for sustained demand; CapLift is a reactive emergency measure","They are the same thing","AHOD is for quality issues; CapLift is for volume issues"], ans:1, exp:"AHOD = proactive, structural (raise caps, add shifts for ongoing high volume). CapLift = reactive, crisis-driven (everyone jumps in for sudden spikes)." },
+  { p:1, tag:"pm", q:"What are the 4 responsibilities of a Shift Manager?", opts:["Hiring, Training, Coaching, Termination","IC Shape Review, Attendance Review, Handover, Realtime Actions","Forecasting, Scheduling, Monitoring, Reporting","Quality Audit, Coaching, Training, Performance Review"], ans:1, exp:"Shift Manager R&R: (1) IC Shape Reviewal, (2) Attendance Review, (3) Shift Manager Handover (EOS email), (4) Realtime Actions." },
+  { p:1, tag:"pm", q:"Per Interval IC formula is:", opts:["Total calls ÷ Total intervals","Achieved intervals ÷ Total day intervals","Production ÷ Commitment","Agents logged in ÷ Agents scheduled"], ans:2, exp:"Per Interval IC % = Production ÷ Commitment (per interval). Per Day IC % = Total achieved intervals ÷ Total day intervals." },
+  { p:1, tag:"pm", q:"You can hit overall SLA but still fail IC. Why?", opts:["Because IC measures quality not speed","Because you could be overstaffed in valleys but understaffed during peak intervals","Because IC is measured annually","Because SLA and IC are completely unrelated"], ans:1, exp:"IC catches interval-level staffing gaps. You might overstaff during low-volume periods (masking the SLA average) but still have gaps during peak 30-min intervals." },
+
+  // Coaching
+  { p:1, tag:"coach", q:"In the GROW model, what does 'Reality' focus on?", opts:["Setting targets and KPIs","The agent's current score, current actions, opportunities, and challenges","Listing all possible action items","Getting a verbal commitment"], ans:1, exp:"Reality (R) = Where is the agent NOW? Current Score, Current Actions, Opportunities, Challenges. The agent should assess their own present situation." },
+  { p:1, tag:"coach", q:"What is the hardest part of GROW to achieve, and how do you solve it?", opts:["Goal — solved by setting SMART targets","Reality — solved by showing hard evidence","Options — solved by brainstorming alternatives","Will — solved by using the Endowment Effect to create ownership"], ans:3, exp:"'The Will' is hardest — getting the agent to actually commit and follow through. Use the Endowment Effect: give them ownership so they feel it's THEIR decision." },
+  { p:1, tag:"coach", q:"What should a coaching session's Hard Evidence consist of?", opts:["Only the DPR numbers","Monitoring, Spot check, Analysis, Verbatim outcomes — very descriptive","Just the agent's attendance record","A summary of team performance"], ans:1, exp:"Hard Evidence = Monitoring results + Spot checks + Analysis data + Verbatim feedback. Must be very descriptive, not vague." },
+  { p:1, tag:"coach", q:"Why should you 'never say NO' during coaching?", opts:["It's against company policy","People don't like admitting mistakes, but they can see them when guided through loopholes in their own argument","Saying NO motivates agents to prove you wrong","It doesn't matter what you say, only the data matters"], ans:1, exp:"People resist admitting mistakes when told directly. Instead, highlight loopholes and let them reach the conclusion themselves. They'll see the issue — they just won't admit it if you point it at them." },
+  { p:1, tag:"coach", q:"How do you practically apply the Endowment Effect? Select the WRONG technique:", opts:["Have the agent identify their own lowlights from evidence","Tell the agent exactly what they did wrong and what to fix","Role-play: make them be the customer","Have them listen to calls and self-rate on the monitoring form"], ans:1, exp:"Telling the agent directly what to fix is NOT the Endowment Effect. The whole point is to guide them to discover it themselves, creating ownership." },
+
+  // RCA
+  { p:1, tag:"rca", q:"In the 5 Whys example about TSR repeats, what was the root cause?", opts:["Agents didn't follow the correct flow","Customers called back for the same issue","The knowledge issue was not included in the training material","Agents chose the wrong symptom"], ans:2, exp:"The chain: Repeats → same issue → wrong flow → wrong symptom → knowledge issue → NOT INCLUDED IN TRAINING MATERIAL. The root cause is the training gap." },
+  { p:1, tag:"rca", q:"What is the common pitfall of the 5 Whys?", opts:["It takes too long","Accepting vague answers like 'lack of ownership' or stopping before reaching the true root cause","It requires too much data","It only works for financial problems"], ans:1, exp:"Common pitfall: accepting vague answers ('lack of ownership'), stopping before the actual root cause, or not validating the conclusion with data." },
+  { p:1, tag:"rca", q:"When should you use a Deep Dive instead of simpler tools?", opts:["Always — it's the best tool","When the issue involves multiple drivers across people, tools, and processes and simpler tools give inconclusive results","Only for financial analysis","Only when the client requests it"], ans:1, exp:"Deep Dive is for complex, multi-dimensional issues where simpler tools (5 Whys, Pareto) point to broad or inconclusive causes." },
+  { p:1, tag:"rca", q:"What is the common pitfall of Pareto Analysis?", opts:["It requires exactly 5 categories","Focusing only on frequency and ignoring impact severity","It can only be used for call volume issues","It takes too long to complete"], ans:1, exp:"Common pitfall: focusing only on how frequently something happens while ignoring how severe its impact is. A rare event with massive impact matters more." },
+  { p:1, tag:"rca", q:"Addressing a symptom gives you:", opts:["A long-term permanent fix","Short-term relief — the problem keeps coming back","No effect at all","Better results than addressing root causes"], ans:1, exp:"Addressing symptoms = short-term relief. The problem recurs. Only addressing the ROOT CAUSE gives a long-term fix." },
+
+  // KPIs
+  { p:1, tag:"kpi", q:"Productive time = 377 min, Available = 58 min, Paid hours = 480 min. What is Utilization?", opts:["78.54%","86.67%","90.63%","95.21%"], ans:2, exp:"Utilization = (377 + 58) ÷ 480 = 435 ÷ 480 = 90.63%." },
+  { p:1, tag:"kpi", q:"Using the same data (Productive=377, Available=58), what is Occupancy?", opts:["78.54%","86.67%","90.63%","95.21%"], ans:1, exp:"Occupancy = 377 ÷ (377 + 58) = 377 ÷ 435 = 86.67%." },
+  { p:1, tag:"kpi", q:"Shrinkage components: Sys=300, Abs=900, Train=400, 1on1=500, Coach=450, Attr=1980, Scheduled=19800. What is Shrinkage?", opts:["15.30%","19.55%","22.88%","25.10%"], ans:2, exp:"Total lost = 300+900+400+500+450+1980 = 4,530. Shrinkage = 4,530 ÷ 19,800 = 22.88%." },
+  { p:1, tag:"kpi", q:"TTT=3729s, Hold=76s, ACW=18s, Calls=10. What is AHT?", opts:["372.9 sec","380.5 sec","382.3 sec","382 sec"], ans:2, exp:"AHT = (3729 + 76 + 18) ÷ 10 = 3,823 ÷ 10 = 382.3 seconds (≈382 sec)." },
+  { p:1, tag:"kpi", q:"6 positive surveys, 4 negative, 10 total. What is NPS?", opts:["60%","40%","20%","10%"], ans:2, exp:"NPS = (Promoters − Detractors) ÷ Total = (6 − 4) ÷ 10 = 20%." },
+
+  // Financial
+  { p:1, tag:"fin", q:"What are the 3 variables that determine People (Direct Labor) cost?", opts:["Salary, Benefits, Taxes","Profile, Experience, Tenure","Headcount, Hours, Rate","Training, Attrition, Overtime"], ans:1, exp:"The 3 cost variables: (1) Profile (Sales/Tech/Language), (2) Experience level, (3) Tenure (senior GC earns more)." },
+  { p:1, tag:"fin", q:"In a Per Transaction billing model, what is the key management focus?", opts:["Maintaining maximum staffing levels","Managing attendance and shrinkage only","Volume — reduce abandons, manage AHT, maximize calls handled","Ensuring all agents are in AUX for training"], ans:2, exp:"Per Transaction: Revenue = Calls × Rate. So maximize calls handled, reduce abandon rate, manage AHT, and tightly control staffing by interval." },
+  { p:1, tag:"fin", q:"What is the danger of reducing AHT in a Per Productive Hour billing model?", opts:["It has no effect on revenue","Reducing AHT could actually REDUCE revenue since fewer productive minutes are billed","It always increases revenue","It only affects quality, not finances"], ans:1, exp:"In Per Productive Hour billing, you're paid for handle time. If you reduce AHT, you reduce billable minutes — potentially reducing revenue. Always model the impact first." },
+  { p:1, tag:"fin", q:"What is the formula for Gross Margin %?", opts:["Revenue ÷ Direct Cost × 100","(Revenue − Direct Cost) ÷ Revenue × 100","Direct Cost ÷ Revenue × 100","(Revenue − OPEX) ÷ Revenue × 100"], ans:1, exp:"GM% = (Revenue − Direct Cost) ÷ Revenue × 100. Also known as Gross Margin ÷ Revenue." },
+  { p:1, tag:"fin", q:"What are 'Inactive People' in cost drivers?", opts:["Agents who are logged in but not taking calls","People on payroll but not needed/not performing work — trainees, realigned staff, extended leaves","Agents on break","Terminated employees still in the system"], ans:1, exp:"Inactive People = people you're paying who are NOT doing productive work: new hire trainees, people realigned to different accounts, people on extended paid leaves." },
+
+  // ===== PHASE 3: SCENARIOS & MATH (25) =====
+  { p:2, tag:"kpi", q:"800 calls × €6/call revenue. Agents: 130h × €15. Sups: 20h × €18. What is Gross Margin?", opts:["€1,950","€2,310","€2,490","€4,800"], ans:2, exp:"Revenue = 800×6 = €4,800. Cost = (130×15)+(20×18) = 1,950+360 = €2,310. GM = 4,800−2,310 = €2,490." },
+  { p:2, tag:"kpi", q:"Same scenario: Revenue €4,800, GM €2,490. What is the GM%?", opts:["48.1%","51.9%","52.0%","55.3%"], ans:2, exp:"GM% = 2,490 ÷ 4,800 = 0.51875 = 51.9% (≈52%)." },
+  { p:2, tag:"fin", q:"2,000,000 calls/year, AHT = 6 min. How many annualized hours?", opts:["120,000","200,000","333,333","12,000,000"], ans:1, exp:"Annualized Hours = 2,000,000 × 6 ÷ 60 = 200,000 hours." },
+  { p:2, tag:"fin", q:"With 200,000 annual hours and NO shrinkage, how many agents needed? (52 wks, 5 days, 8h)", opts:["52.5","96.2","107.1","139"], ans:1, exp:"Annual hours/person = 52×5×8 = 2,080. HC = 200,000 ÷ 2,080 = 96.2 agents." },
+  { p:2, tag:"fin", q:"Adding 10.2% Not-In-Office shrinkage to the 96.2 base, how many agents now?", opts:["96.2","101.8","107.1","119.6"], ans:2, exp:"Effective hours = 2,080 × 89.8% = 1,867.84. HC = 200,000 ÷ 1,867.84 = 107.1 agents." },
+  { p:2, tag:"fin", q:"Adding In-Office shrinkage (10.4%) on top of Not-In-Office (10.2%), agents needed?", opts:["107.1","112.2","119.6","139"], ans:2, exp:"Effective = 2,080 × 0.898 × 0.896 = 1,673.58. HC = 200,000 ÷ 1,673.58 = 119.6 agents." },
+  { p:2, tag:"fin", q:"Adding Occupancy (86%) on top of both shrinkages, TOTAL agents needed?", opts:["119.6","125.6","136.4","139"], ans:3, exp:"Effective = 2,080 × 0.898 × 0.896 × 0.86 = 1,439.28. HC = 200,000 ÷ 1,439.28 = 139 agents." },
+  { p:2, tag:"kpi", q:"Missing hours = 27, Scheduled = 126. What is absenteeism %?", opts:["15%","18%","21%","24%"], ans:2, exp:"Absenteeism = 27 ÷ 126 = 21.43% ≈ 21%." },
+  { p:2, tag:"kpi", q:"2 heads left out of 10 total. What is attrition?", opts:["10%","15%","20%","25%"], ans:2, exp:"Attrition = 2 ÷ 10 = 20%." },
+  { p:2, tag:"kpi", q:"SLA target is 80/30. Calls answered in 30s = 12,184. Total calls = 15,683. SLA achieved?", opts:["72%","75%","78%","82%"], ans:2, exp:"SLA = 12,184 ÷ 15,683 = 77.7% ≈ 78%. Target was 80%, so this is MISSED." },
+  { p:2, tag:"fin", q:"Login-hour billing. 100 agents, 15% absence vs 10% planned, 8h shift, $22/hr. Daily MLOTT?", opts:["$440","$660","$880","$1,100"], ans:2, exp:"MLOTT = 100 × (15%-10%) × 8 × $22 = 100 × 0.05 × 8 × 22 = $880/day." },
+  { p:2, tag:"fin", q:"Not-In-Office shrinkage: 260 working days, 17 holidays, 4.6 absence, 5 other. What % shrinkage?", opts:["8.5%","10.2%","12.4%","15.0%"], ans:1, exp:"Total lost = 17+4.6+5 = 26.6 days. Shrinkage = 26.6 ÷ 260 = 10.23% ≈ 10.2%." },
+  { p:2, tag:"fin", q:"In-Office: 480 min day, Breaks=30, Coaching/Training=17, Other=3. Production Mode %?", opts:["85.4%","87.2%","89.6%","92.1%"], ans:2, exp:"Total lost = 30+17+3 = 50 min. In-Office shrinkage = 50÷480 = 10.4%. Production Mode = 100%-10.4% = 89.6%." },
+  { p:2, tag:"fin", q:"Production minutes = 430, Available time = 60. What is Occupancy?", opts:["82%","84%","86%","88%"], ans:2, exp:"Available % = 60 ÷ 430 = 14%. Occupancy = 100% - 14% = 86%." },
+  { p:2, tag:"coach", q:"An agent has declining NPS. You prepare for coaching. What's the FIRST thing in your prep?", opts:["Write the action items","Review their rank from DPR and trend of failed KPI","Schedule a team meeting","Ask their peer about them"], ans:1, exp:"Pre-coaching prep starts with: Summary showing overall rank from the DPR and the trend of the failed KPI. Then gather hard evidence." },
+  { p:2, tag:"rca", q:"NPS dropped from 49% to 42% WoW. The client wants a case study. What is your FIRST step?", opts:["Write an action plan immediately","Blame the outage calls","Verify the supervisor's observations from the raw data","Ask for more time"], ans:2, exp:"Step 1: VERIFY observations from raw data. Don't accept assumptions — validate with data first, then identify root cause, then build an action plan." },
+  { p:2, tag:"pm", q:"Your Q4 agent has been coached twice but shows no improvement. Next step?", opts:["Move them to Q3 automatically","Focus on development and assign support tasks","RCA → Follow up → Accountability → Repeat the cycle","Give them a final warning immediately"], ans:2, exp:"Q4 action: RCA → Follow Up → Accountability → Repeat. The cycle continues. Keep investigating the root cause and holding them accountable." },
+  { p:2, tag:"fin", q:"$10,000 investment in CSAT training. Returns decline from $2,000/mo to $0 over 11 months. Total return?", opts:["$10,000","$11,000","$1,000 net","$21,000"], ans:2, exp:"Total returns = $2,000+1,800+1,600+...+200+0 = $11,000. Net = $11,000 - $10,000 = $1,000 net positive, plus intangible benefits." },
+  { p:2, tag:"fin", q:"Penalty: 4% of billing ($22,000). OT corrective cost: $26,750. Revenue improvement: $49,500. Should you do it?", opts:["No — the cost exceeds the penalty avoided","Yes — net outcome is +$22,750","Need more data to decide","Only if the client requests it"], ans:1, exp:"Corrective cost = $26,750. Revenue improvement = $49,500. Net = +$22,750. Positive outcome — plan the overtime." },
+  { p:2, tag:"coach", q:"During coaching, the agent says 'I don't have enough time to follow the process.' What do you do?", opts:["Agree and reduce their workload","Say NO, the process must be followed","Highlight loopholes: 'If time is the issue, why do some agents with the same volume succeed?'","Ignore the excuse and move on"], ans:2, exp:"Don't say NO. Create a loophole: point out that others with the same conditions succeed. Let them reach the conclusion that it's not a time issue." },
+  { p:2, tag:"kpi", q:"What is the financial impact of high Attrition? (Select the MOST complete answer)", opts:["Just recruitment costs","SLA drops, penalties, and financial loss from recruitment + training + overtime + reduced new-hire productivity","Only training costs","Only the cost of overtime to cover the gap"], ans:1, exp:"Attrition causes: SLA drop (understaffing → penalties), recruitment costs, training salary, overtime to cover, reduced productivity of new hires, lost bonuses." },
+  { p:2, tag:"pm", q:"IC Components flow: SHRINKAGE is split into ___ and ___?", opts:["Morning and Afternoon","Planned and Unplanned","Onsite and Offsite","Paid and Unpaid"], ans:2, exp:"Shrinkage is split into OFFSITE (ABS: CL, SK, ANX) and ONSITE (BR, OFF Qs, etc.)." },
+  { p:2, tag:"fin", q:"Why is an 'appropriate profile mix' the best solution for staffing costs?", opts:["All high-profile agents guarantee best performance","All low-profile agents minimize cost","A mix balances cost competitiveness with the ability to hit KPIs/SLA","It doesn't matter — hire whoever is available"], ans:2, exp:"All-high = expensive, limited development. All-low = cheap but needs heavy training/coaching. A balanced mix optimizes both cost and performance." },
+  { p:2, tag:"rca", q:"What is the common pitfall of Deep Dive analysis?", opts:["It's too simple","Drowning in data without synthesizing, or building backward from a narrative instead of letting data drive insights","It doesn't use enough data","It can only be done by management"], ans:1, exp:"Deep Dive pitfall: overcomplicating scope, drowning in data without synthesizing actionable findings, or building the story first and cherry-picking data to fit." },
+  { p:2, tag:"fin", q:"IT equipment: 10 laptops × $899 = $8,990. Depreciation period = 3 years. Monthly P&L impact?", opts:["$8,990","$2,997","$249","$0"], ans:2, exp:"Monthly depreciation = $8,990 ÷ 36 months = $249.72 ≈ $249/month on the P&L." },
+
+  // ===== PHASE 4: MASTERY (25) =====
+  { p:3, tag:"fin", q:"Your billing model is Per Productive Hour. AHT dropped 30 seconds. What's the likely revenue impact?", opts:["Revenue increases — more calls handled","Revenue decreases — fewer billable productive minutes","No impact — billing is per hour","Revenue stays the same — only cost changes"], ans:1, exp:"Per Productive Hour = paid for handle time. Less AHT = fewer billable minutes. Revenue could DECREASE. Always model the impact before reducing AHT." },
+  { p:3, tag:"fin", q:"What is the Triple Constraint and why does it matter?", opts:["Cost ↔ Revenue ↔ KPIs — changing one always affects the others","Time ↔ Quality ↔ Scope — standard project management","People ↔ Process ↔ Technology — organizational framework","Input ↔ Output ↔ Feedback — systems thinking"], ans:0, exp:"Triple Constraints: Cost ↔ Revenue ↔ KPIs. Cutting cost may impact KPIs or revenue. Always model the NET impact across all three before making decisions." },
+  { p:3, tag:"coach", q:"You're using GROW. The agent set a goal but when assessing Reality, their score is much worse than they thought. What's the best response?", opts:["Change the goal to something easier","Let the reality sink in — this creates motivation to bridge the gap","Skip Reality and go straight to Options","Tell them their goal is unrealistic"], ans:1, exp:"The power of Reality in GROW is the gap it reveals between where they are and where they want to be. This gap creates natural motivation — don't rush past it." },
+  { p:3, tag:"pm", q:"A Q2 agent wants to know why they're not getting promoted. What's your approach?", opts:["Tell them to wait their turn","Motivate them, help with minor opportunities, and use development as a prize/reward","Move them to Q1 immediately","Tell them to focus on their weaknesses only"], ans:1, exp:"Q2 approach: Motivate — help with minor opportunities — use development as a prize. Show them the path from Q2 to Q1 and what skills/results will get them there." },
+  { p:3, tag:"fin", q:"You manage a Per Transaction account. Abandon rate is 5% vs expected 2%. Volume = 100,000 calls at $5.50 each. What's the MLOTT?", opts:["$5,500","$8,250","$11,000","$16,500"], ans:3, exp:"Excess abandons = 5%-2% = 3%. MLOTT = 3% × 100,000 × $5.50 = $16,500 in revenue left on the table." },
+  { p:3, tag:"kpi", q:"An agent has: Talk=400min, Hold=20min, ACW=30min, Available=50min, Paid=540min. Calculate Utilization AND Occupancy.", opts:["Util=83.3%, Occ=90%","Util=92.6%, Occ=90%","Util=90%, Occ=92.6%","Util=92.6%, Occ=83.3%"], ans:1, exp:"Productive = 400+20+30 = 450. Util = (450+50)÷540 = 500÷540 = 92.6%. Occ = 450÷(450+50) = 450÷500 = 90%." },
+  { p:3, tag:"fin", q:"You want to give 30 min extra coaching per week per agent. 100 agents, per-minute billing at $0.40/min. What's the weekly revenue impact?", opts:["No impact — coaching is offline","Loss of $1,200/week","Loss of $2,000/week","Gain of $2,000/week"], ans:2, exp:"30 min × 100 agents = 3,000 minutes offline. At $0.40/min = $1,200/week lost revenue. You need to justify this with improved performance/bonuses." },
+  { p:3, tag:"rca", q:"Your team's CSAT dropped. Fishbone shows issues in People AND Process categories. What should you do?", opts:["Pick the easiest category to fix","Validate both categories with data, prioritize using Pareto, then address the vital few causes","Fix both simultaneously regardless of impact","Ignore Process — people issues are always the root cause"], ans:1, exp:"Validate with data (don't assume). Use Pareto to identify which specific causes have the highest impact. Address the vital few first." },
+  { p:3, tag:"pm", q:"During peak hours, IC is failing despite overall SLA being met. What operational action should you take?", opts:["Ignore it — SLA is being met","Redistribute agents from over-staffed intervals to under-staffed peak intervals","Hire more agents","Reduce AHT across the board"], ans:1, exp:"IC failure during peaks means interval-level staffing gaps. Work with WFM to redistribute — move coverage from over-staffed valleys to under-staffed peaks." },
+  { p:3, tag:"fin", q:"Your SOW includes a 4% billing bonus for CSAT ≥ 90% and a -6.5% penalty for CSAT ≤ 80%. Current CSAT is 85%. You could invest $15K in training to push CSAT to 91%. Monthly billing is $200K. Is it worth it?", opts:["No — the current CSAT is acceptable","Yes — the 4% bonus ($8K/mo) will exceed the $15K investment within 2 months","Need 6 months of data to decide","Only if the client pays for the training"], ans:1, exp:"At CSAT 91% → 4% bonus = $200K × 4% = $8K/month. Investment pays back in < 2 months. Plus: avoids risk of dropping below 80% (-6.5% = $13K penalty)." },
+  { p:3, tag:"coach", q:"An agent consistently excels at AHT and CSAT but has high ACW. What coaching approach is best?", opts:["Punish the high ACW with a warning","Use GROW: Goal = reduce ACW, Reality = their current ACW vs target, Options = explore what they're doing in ACW, Will = agree on specific reduction steps","Ignore it — their other metrics are good","Tell them to stop doing ACW immediately"], ans:1, exp:"Use GROW systematically. Their strength in AHT/CSAT suggests they're thorough. Explore what they're doing in ACW — there may be a process issue or a habit that can be optimized." },
+  { p:3, tag:"fin", q:"What is the Gross Annual Hours per person formula?", opts:["365 × 24","52 × 5 × 8 = 2,080","260 × 8 = 2,080","Both B and C are correct"], ans:3, exp:"Both are the same: 52 weeks × 5 days × 8 hours = 2,080. Or: 260 business days × 8 hours = 2,080. Same result." },
+  { p:3, tag:"rca", q:"You did a 5 Whys and landed on 'lack of motivation' as the root cause. Is this acceptable?", opts:["Yes — motivation is always the root cause","No — 'lack of motivation' is vague. Keep asking WHY they lack motivation","It depends on the manager's judgment","Yes — if the agent admits it"], ans:1, exp:"Common pitfall! 'Lack of motivation' is vague. Ask: WHY are they unmotivated? Is it pay? Career path? Personal issues? Manager relationship? Dig deeper." },
+  { p:3, tag:"pm", q:"For the EOS (End of Shift) handover, what must the Shift Manager include?", opts:["Only the IC status","IC status, attendance feedback, ABS, and confirmation that coaching/training has been fulfilled","Just a verbal summary to the next shift","Only the attendance numbers"], ans:1, exp:"EOS handover email must include: IC status, attendance feedback, ABS details, and confirmation that coaching/training sessions were completed." },
+  { p:3, tag:"kpi", q:"What does it mean when Occupancy is too HIGH (e.g., 95%+)?", opts:["Excellent efficiency — the team is performing great","Agents are back-to-back with no break between calls — risk of burnout, higher absenteeism, higher attrition, higher AHT","It means we need more agents","It means SLA is being exceeded"], ans:1, exp:"Very high occupancy = agents never get a break between calls. This leads to burnout → higher absenteeism → higher attrition → higher AHT. Balance is key." },
+  { p:3, tag:"fin", q:"Revenue = $28,600. Direct Costs = $18,590. OPEX = $4,200. What is Operating Income?", opts:["$10,010","$5,810","$14,010","$24,400"], ans:1, exp:"GM = $28,600 - $18,590 = $10,010. OI = GM - OPEX = $10,010 - $4,200 = $5,810." },
+  { p:3, tag:"coach", q:"What are the 4 types of evidence in pre-coaching Hard Evidence?", opts:["DPR, Scorecard, Attendance, Survey","Monitoring, Spot check, Analysis, Verbatim","KPIs, SLA, IC, CSAT","Calls, Emails, Chats, Tickets"], ans:1, exp:"Hard Evidence = Monitoring results + Spot checks + Analysis data + Verbatim feedback. All must be descriptive and specific." },
+  { p:3, tag:"fin", q:"Bonuses are often calculated over a quarter. If you're ahead in months 1-2, what can you do in month 3?", opts:["Reduce staffing to cut costs","Grant more leaves or do morale-building activities and still hit the quarterly target","Push for even higher performance","Nothing — maintain the same pace"], ans:1, exp:"If ahead early in the quarter, you have room to grant leaves, run morale activities, or do extra training in the last month and still meet the quarterly bonus target." },
+  { p:3, tag:"kpi", q:"3,000,000 calls/year, AHT=8min, Not-In-Office=12%, In-Office=11%, Occupancy=84%. How many agents needed?", opts:["192","219","245","292"], ans:3, exp:"Hours = 3M×8÷60 = 400K. Effective = 2,080×0.88×0.89×0.84 = 1,368.4. HC = 400K÷1,368.4 = 292.3 ≈ 292 agents." },
+  { p:3, tag:"pm", q:"Can you hit SLA target but still face financial penalties?", opts:["No — SLA is the only metric that matters","Yes — if other metrics like CSAT, NPS, quality, or IC fall below contractual thresholds","Only if the client is unreasonable","Only in Per Transaction billing"], ans:1, exp:"Penalties can be tied to many metrics: CSAT, NPS, quality scores, ASA, abandon rate, IC — not just SLA. Know your SOW!" },
+  { p:3, tag:"fin", q:"What is a SOW (Statement of Work)?", opts:["A verbal agreement between vendor and client","A document defining project-specific activities, deliverables, timelines, billing, and KPIs for the vendor","A marketing proposal","An internal HR document"], ans:1, exp:"SOW = the contract defining scope, deliverables, timelines, billing model, KPIs, bonuses, penalties. Every TL should know their account's SOW." },
+  { p:3, tag:"rca", q:"When should you use a Fishbone diagram instead of 5 Whys?", opts:["When the problem is simple with 1 cause","When the problem has multiple contributing factors from different categories and needs structured brainstorming","When you don't have time for analysis","When the client requests it specifically"], ans:1, exp:"Fishbone is for multi-factor problems with unclear causes spanning People, Process, Tools, etc. 5 Whys is better for simpler, single-factor issues." },
+  { p:3, tag:"fin", q:"Per-Minute billing. Minimum monthly minute handling is 80%. You achieve 75%. Penalty = 4% of billing ($22K). Unhandled volume = $137.5K. OT at 1.5x costs $26.75K and recovers $49.5K. Net outcome?", opts:["Loss of $22,750","Break even","Gain of $22,750","Gain of $49,500"], ans:2, exp:"Corrective cost = $26,750. Revenue improvement = $49,500 (reduced penalty + captured volume). Net = $49,500 - $26,750 = +$22,750." },
+  { p:3, tag:"coach", q:"What makes the Endowment Effect the BEST tool for solving 'The Will' in GROW?", opts:["It punishes non-compliance","It gives the agent a sense of OWNERSHIP — people commit to what they feel is their own decision, not an instruction","It's the simplest technique","It eliminates the need for follow-up"], ans:1, exp:"People commit to what they own. The Endowment Effect transforms an instruction into the agent's own decision. This is the psychological key to Will." },
+  { p:3, tag:"kpi", q:"1,200 calls/day at €5. 150 agent hrs at €14. 25 sup hrs at €17. What is GM%?", opts:["42.1%","52.0%","57.9%","62.5%"], ans:2, exp:"Revenue = 1,200×5 = €6,000. Cost = (150×14)+(25×17) = 2,100+425 = €2,525. GM = 6,000-2,525 = €3,475. GM% = 3,475÷6,000 = 57.9%." }
+];
+
+let scores = [null, null, null, null];
+let currentPhase = null;
+let currentQ = 0;
+let currentAnswers = [];
+let answered = false;
+
+function render() {
+  if (currentPhase === null) { renderHome(); }
+  else { renderQuiz(); }
+}
+
+function renderHome() {
+  let html = `
+    <div class="bg-[var(--card)] rounded-xl border border-[var(--border)] p-6 mb-4">
+      <h2 class="text-xl font-bold mb-1">📝 Assessment Quiz Center</h2>
+      <p class="text-[var(--muted-foreground)] text-sm mb-4">4 Phases × 25 Questions = 100 Questions covering ALL topics</p>
+      <div class="space-y-3">`;
+
+  PHASES.forEach((phase, i) => {
+    const qs = ALL_QUESTIONS.filter(q => q.p === i);
+    const done = scores[i] !== null;
+    const pct = done ? Math.round(scores[i] / qs.length * 100) : 0;
+    const statusColor = done ? (pct >= 80 ? '#22c55e' : pct >= 60 ? '#f59e0b' : '#ef4444') : 'var(--border)';
+    html += `
+      <div class="border border-[var(--border)] rounded-lg p-4 flex items-center justify-between cursor-pointer hover:border-[var(--primary)] transition-all" onclick="startPhase(${i})">
+        <div>
+          <div class="font-semibold">${phase.name}</div>
+          <div class="text-[var(--muted-foreground)] text-sm">${phase.desc}</div>
+          <div class="text-xs text-[var(--muted-foreground)] mt-1">${qs.length} questions</div>
+        </div>
+        <div class="text-right">
+          ${done ? `<div class="text-2xl font-bold" style="color:${statusColor}">${pct}%</div><div class="text-xs text-[var(--muted-foreground)]">${scores[i]}/${qs.length} correct</div><div class="text-xs mt-1 cursor-pointer underline" style="color:var(--primary)">Retake</div>` : `<div class="px-4 py-2 rounded-lg text-sm font-medium" style="background:var(--primary);color:var(--primary-foreground)">Start →</div>`}
+        </div>
+      </div>`;
+  });
+
+  const totalDone = scores.filter(s => s !== null).length;
+  const totalCorrect = scores.reduce((a, b) => a + (b || 0), 0);
+  const totalQs = totalDone * 25;
+
+  if (totalDone > 0) {
+    const overallPct = totalQs > 0 ? Math.round(totalCorrect / totalQs * 100) : 0;
+    html += `
+      </div>
+      <div class="mt-6 pt-4 border-t border-[var(--border)]">
+        <div class="flex justify-between items-center">
+          <div>
+            <div class="font-semibold">Overall Progress</div>
+            <div class="text-sm text-[var(--muted-foreground)]">${totalDone}/4 phases completed — ${totalCorrect}/${totalQs} correct</div>
+          </div>
+          <div class="text-3xl font-bold" style="color:${overallPct >= 80 ? '#22c55e' : overallPct >= 60 ? '#f59e0b' : '#ef4444'}">${overallPct}%</div>
+        </div>
+        <div class="w-full bg-[var(--content)] rounded-full h-3 mt-2">
+          <div class="h-3 rounded-full transition-all" style="width:${overallPct}%;background:${overallPct >= 80 ? '#22c55e' : overallPct >= 60 ? '#f59e0b' : '#ef4444'}"></div>
+        </div>
+      </div>`;
+  } else {
+    html += `</div>`;
+  }
+
+  html += `</div>`;
+  document.getElementById('app').innerHTML = `<div class="px-4 pb-8 pt-2">${html}</div>`;
+}
+
+function startPhase(idx) {
+  currentPhase = idx;
+  currentQ = 0;
+  answered = false;
+  currentAnswers = [];
+  const qs = ALL_QUESTIONS.filter(q => q.p === idx);
+  // Shuffle questions within the phase
+  for (let i = qs.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [qs[i], qs[j]] = [qs[j], qs[i]];
+  }
+  currentAnswers = new Array(qs.length).fill(null);
+  render();
+}
+
+function renderQuiz() {
+  const qs = ALL_QUESTIONS.filter(q => q.p === currentPhase);
+  const qData = qs[currentQ];
+  const tag = TAGS[qData.tag];
+  const pct = Math.round((currentQ) / qs.length * 100);
+  const correctSoFar = currentAnswers.filter((a, i) => i < currentQ && a === true).length;
+
+  let html = `
+    <div class="bg-[var(--card)] border-b border-[var(--border)] p-4 flex items-center justify-between mb-4">
+      <div class="flex items-center gap-3">
+        <button onclick="goHome()" class="text-sm px-3 py-1 rounded border border-[var(--border)] hover:bg-[var(--accent)]">← Back</button>
+        <span class="font-semibold">${PHASES[currentPhase].name}</span>
+      </div>
+      <div class="text-sm text-[var(--muted-foreground)]">Q ${currentQ + 1} / ${qs.length} &nbsp;|&nbsp; Score: ${correctSoFar}</div>
+    </div>
+    <div class="px-4">
+      <div class="w-full bg-[var(--content)] rounded-full h-2 mb-4">
+        <div class="h-2 rounded-full transition-all" style="width:${pct}%;background:var(--primary)"></div>
+      </div>
+      <div class="bg-[var(--card)] rounded-xl border border-[var(--border)] p-6 fade-in">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="tag" style="background:${tag.color};color:white">${tag.label}</span>
+          <span class="text-sm text-[var(--muted-foreground)]">Question ${currentQ + 1}</span>
+        </div>
+        <h3 class="text-lg font-semibold mb-4">${qData.q}</h3>
+        <div class="space-y-2" id="options">`;
+
+  qData.opts.forEach((opt, i) => {
+    html += `<button id="opt${i}" class="opt-btn w-full text-left px-4 py-3 rounded-lg border border-[var(--border)] bg-[var(--content)] text-sm" onclick="selectAnswer(${i})">${String.fromCharCode(65 + i)}. ${opt}</button>`;
+  });
+
+  html += `</div>
+        <div id="feedback" class="mt-4" style="display:none"></div>
+        <div id="nextBtn" class="mt-4" style="display:none">
+          <button onclick="nextQuestion()" class="px-6 py-2 rounded-lg text-sm font-medium" style="background:var(--primary);color:var(--primary-foreground)">${currentQ < qs.length - 1 ? 'Next Question →' : 'See Results →'}</button>
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('app').innerHTML = html;
+}
+
+function selectAnswer(idx) {
+  if (answered) return;
+  answered = true;
+  const qs = ALL_QUESTIONS.filter(q => q.p === currentPhase);
+  const qData = qs[currentQ];
+  const correct = idx === qData.ans;
+  currentAnswers[currentQ] = correct;
+
+  const btn = document.getElementById(`opt${idx}`);
+  btn.classList.add(correct ? 'correct' : 'wrong');
+
+  if (!correct) {
+    document.getElementById(`opt${qData.ans}`).classList.add('reveal');
+  }
+
+  // Disable all buttons
+  qData.opts.forEach((_, i) => {
+    document.getElementById(`opt${i}`).style.pointerEvents = 'none';
+  });
+
+  const fb = document.getElementById('feedback');
+  fb.style.display = 'block';
+  fb.innerHTML = `
+    <div class="p-3 rounded-lg text-sm" style="background:${correct ? 'rgba(34,197,94,0.1);border:1px solid #22c55e' : 'rgba(239,68,68,0.1);border:1px solid #ef4444'}">
+      <div class="font-semibold mb-1">${correct ? '✅ Correct!' : '❌ Incorrect'}</div>
+      <div class="text-[var(--muted-foreground)]">${qData.exp}</div>
+    </div>`;
+
+  document.getElementById('nextBtn').style.display = 'block';
+}
+
+function nextQuestion() {
+  const qs = ALL_QUESTIONS.filter(q => q.p === currentPhase);
+  if (currentQ < qs.length - 1) {
+    currentQ++;
+    answered = false;
+    render();
+  } else {
+    showResults();
+  }
+}
+
+function showResults() {
+  const qs = ALL_QUESTIONS.filter(q => q.p === currentPhase);
+  const correct = currentAnswers.filter(a => a === true).length;
+  const total = qs.length;
+  const pct = Math.round(correct / total * 100);
+  scores[currentPhase] = correct;
+
+  const color = pct >= 80 ? '#22c55e' : pct >= 60 ? '#f59e0b' : '#ef4444';
+  const msg = pct >= 90 ? '🏆 Outstanding! You\'ve mastered this phase!' : pct >= 80 ? '🌟 Great job! You\'re well-prepared.' : pct >= 60 ? '📚 Good effort. Review the topics you missed.' : '💪 Keep studying. Review the playbook and try again.';
+
+  // Count by tag
+  const tagStats = {};
+  qs.forEach((q, i) => {
+    if (!tagStats[q.tag]) tagStats[q.tag] = { correct: 0, total: 0 };
+    tagStats[q.tag].total++;
+    if (currentAnswers[i]) tagStats[q.tag].correct++;
+  });
+
+  let tagHtml = '';
+  Object.keys(tagStats).forEach(t => {
+    const s = tagStats[t];
+    const tp = Math.round(s.correct / s.total * 100);
+    const tc = tp >= 80 ? '#22c55e' : tp >= 60 ? '#f59e0b' : '#ef4444';
+    tagHtml += `
+      <div class="flex items-center justify-between py-2 border-b border-[var(--border)]">
+        <span class="tag" style="background:${TAGS[t].color};color:white">${TAGS[t].label}</span>
+        <span class="font-semibold" style="color:${tc}">${s.correct}/${s.total} (${tp}%)</span>
+      </div>`;
+  });
+
+  let html = `
+    <div class="px-4 pb-8 pt-2">
+      <div class="bg-[var(--card)] rounded-xl border border-[var(--border)] p-6 text-center fade-in">
+        <div class="text-6xl font-bold mb-2" style="color:${color}">${pct}%</div>
+        <div class="text-lg font-semibold mb-1">${PHASES[currentPhase].name} Complete</div>
+        <div class="text-[var(--muted-foreground)] mb-2">${correct} out of ${total} correct</div>
+        <div class="text-sm mb-6">${msg}</div>
+        <div class="text-left max-w-md mx-auto mb-6">
+          <div class="font-semibold mb-2 text-sm">Score by Topic:</div>
+          ${tagHtml}
+        </div>
+        <div class="flex gap-3 justify-center">
+          <button onclick="startPhase(${currentPhase})" class="px-4 py-2 rounded-lg text-sm border border-[var(--border)] hover:bg-[var(--accent)]">🔄 Retake</button>
+          <button onclick="goHome()" class="px-4 py-2 rounded-lg text-sm font-medium" style="background:var(--primary);color:var(--primary-foreground)">Back to Phases</button>
+          ${currentPhase < 3 ? `<button onclick="startPhase(${currentPhase + 1})" class="px-4 py-2 rounded-lg text-sm font-medium" style="background:#22c55e;color:white">Next Phase →</button>` : ''}
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('app').innerHTML = html;
+}
+
+function goHome() {
+  currentPhase = null;
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
